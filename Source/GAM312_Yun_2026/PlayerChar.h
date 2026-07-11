@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+// Included so we can cast line trace hits to our master resource class
+#include "Resource_M.h"
 #include "PlayerChar.generated.h"
 
 class UCameraComponent;
@@ -77,6 +79,28 @@ public:
 	UFUNCTION()
 	void DecreaseStats();
 
+	// Adds the collected amount to the matching index of the resources array
+	UFUNCTION()
+	void GiveResource(float amount, FString resourceType);
+
 	// Timer handle driving the DecreaseStats interval
 	FTimerHandle StatsTimerHandle;
+
+	// Individual resource counts, grouped under the Resources category
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Resources")
+	int Wood;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Resources")
+	int Stone;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Resources")
+	int Berry;
+
+	// Overall resources array - index 0 is Wood, 1 is Stone, 2 is Berry
+	UPROPERTY(EditAnywhere, Category = "Resources")
+	TArray<int> ResourcesArray;
+
+	// Names matching the resources array indices - these must line up with ResourcesArray
+	UPROPERTY(EditAnywhere, Category = "Resources")
+	TArray<FString> ResourcesNameArray;
 };
