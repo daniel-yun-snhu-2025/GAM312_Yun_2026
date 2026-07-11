@@ -4,6 +4,8 @@
 #include "GameFramework/Character.h"
 // Included so we can cast line trace hits to our master resource class
 #include "Resource_M.h"
+// Included for SpawnDecalAtLocation when the line trace hits
+#include "Kismet/GameplayStatics.h"
 #include "PlayerChar.generated.h"
 
 class UCameraComponent;
@@ -103,4 +105,8 @@ public:
 	// Names matching the resources array indices - these must line up with ResourcesArray
 	UPROPERTY(EditAnywhere, Category = "Resources")
 	TArray<FString> ResourcesNameArray;
+
+	// Decal material spawned at the line trace hit location as a visual indicator
+	UPROPERTY(EditAnywhere, Category = "HitMarker")
+	UMaterialInterface* hitDecal;
 };

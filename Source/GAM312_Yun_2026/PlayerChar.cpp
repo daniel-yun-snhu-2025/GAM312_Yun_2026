@@ -107,35 +107,46 @@ void APlayerChar::FindObject()
 	QueryParams.bTraceComplex = true;
 	QueryParams.bReturnFaceIndex = true;
 
-	// Performing the line trace on the Visibility channel
-	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, QueryParams))
+	// Stamina requirement - the hit trace only runs while there is more than 5 stamina left
+	if (Stamina > 5.0f)
 	{
-		// Cast the hit actor to our master resource class
-		AResource_M* HitResource = Cast<AResource_M>(HitResult.GetActor());
-
-		// Only continue if we actually hit a resource - hitting anything else would crash otherwise
-		if (HitResource)
+		// Performing the line trace on the Visibility channel
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, QueryParams))
 		{
-			FString hitName = HitResource->resourceName;
-			int resourceValue = HitResource->resourceAmount;
+			// Cast the hit actor to our master resource class
+			AResource_M* HitResource = Cast<AResource_M>(HitResult.GetActor());
 
-			// Subtract the amount this hit gives us from the resource's remaining total
-			HitResource->totalResource = HitResource->totalResource - resourceValue;
-
-			if (HitResource->totalResource > resourceValue)
+			// Only continue if we actually hit a resource - hitting anything else would crash otherwise
+			if (HitResource)
 			{
-				// There is still resource left - give the player the value collected
-				GiveResource(resourceValue, hitName);
+				FString hitName = HitResource->resourceName;
+				int resourceValue = HitResource->resourceAmount;
 
-				check(GEngine != nullptr);
-				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("Resource Collected"));
-			}
-			else
-			{
-				// Nothing left - destroy the resource actor
-				HitResource->Destroy();
-				check(GEngine != nullptr);
-				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Resource Depleted"));
+				// Subtract the amount this hit gives us from the resource's remaining total
+				HitResource->totalResource = HitResource->totalResource - resourceValue;
+
+				if (HitResource->totalResource > resourceValue)
+				{
+					// There is still resource left - give the player the value collected
+					GiveResource(resourceValue, hitName);
+
+					check(GEngine != nullptr);
+					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("Resource Collected"));
+
+					// Spawn the hit decal at the trace hit location as a visual indicator -
+					// 10x10x10 size, -90 pitch so it faces up off the surface, 2 second lifespan
+					UGameplayStatics::SpawnDecalAtLocation(GetWorld(), hitDecal, FVector(10.0f, 10.0f, 10.0f), HitResult.Location, FRotator(-90, 0, 0), 2.0f);
+
+					// Collecting costs 5 stamina each hit
+					SetStamina(-5.0f);
+				}
+				else
+				{
+					// Nothing left - destroy the resource actor
+					HitResource->Destroy();
+					check(GEngine != nullptr);
+					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Resource Depleted"));
+				}
 			}
 		}
 	}
