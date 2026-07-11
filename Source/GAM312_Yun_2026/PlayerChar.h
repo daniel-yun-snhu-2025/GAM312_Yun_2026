@@ -49,4 +49,34 @@ public:
 	// Establishing the camera component so we can access the camera in code and attach it to the head
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* PlayerCamComp;
+
+	// Player stat variables - editable in the Details panel and readable/writable from Blueprints,
+	// grouped under the Player Stats category
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats")
+	float Health = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats")
+	float Hunger = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats")
+	float Stamina = 100.0f;
+
+	// Blueprint Callable events for adjusting the player stats - a positive amount adds to
+	// the stat and a negative amount subtracts from it
+	UFUNCTION(BlueprintCallable)
+	void SetHealth(float amount);
+
+	UFUNCTION(BlueprintCallable)
+	void SetHunger(float amount);
+
+	UFUNCTION(BlueprintCallable)
+	void SetStamina(float amount);
+
+	// Called on a timer - decreases Hunger over time, regenerates Stamina,
+	// and drains Health once Hunger reaches zero
+	UFUNCTION()
+	void DecreaseStats();
+
+	// Timer handle driving the DecreaseStats interval
+	FTimerHandle StatsTimerHandle;
 };

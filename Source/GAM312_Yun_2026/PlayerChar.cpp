@@ -22,6 +22,9 @@ APlayerChar::APlayerChar()
 void APlayerChar::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Starting the stats timer - calls DecreaseStats every 2 seconds, looping
+	GetWorld()->GetTimerManager().SetTimer(StatsTimerHandle, this, &APlayerChar::DecreaseStats, 2.0f, true);
 }
 
 // Called every frame
@@ -86,4 +89,47 @@ void APlayerChar::StopJump()
 void APlayerChar::FindObject()
 {
 	// Line trace for detecting objects will be established here in a later stepping stone
+}
+
+void APlayerChar::SetHealth(float amount)
+{
+	// Only apply the change while Health stays under 100 - keeps the stat from exceeding its cap
+	if (Health + amount < 100)
+	{
+		Health = Health + amount;
+	}
+}
+
+void APlayerChar::SetHunger(float amount)
+{
+	if (Hunger + amount < 100)
+	{
+		Hunger = Hunger + amount;
+	}
+}
+
+void APlayerChar::SetStamina(float amount)
+{
+	if (Stamina + amount < 100)
+	{
+		Stamina = Stamina + amount;
+	}
+}
+
+void APlayerChar::DecreaseStats()
+{
+	// Hunger goes down by 1 every interval while there is hunger left
+	if (Hunger > 0)
+	{
+		SetHunger(-1.0f);
+	}
+
+	// Stamina regeneration - adds back 10 every interval
+	SetStamina(10.0f);
+
+	// Once Hunger is empty, Health starts draining instead
+	if (Hunger <= 0)
+	{
+		SetHealth(-1.0f);
+	}
 }
