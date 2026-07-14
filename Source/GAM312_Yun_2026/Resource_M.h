@@ -25,7 +25,16 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Name of this resource - editable per instance/child so Wood, Stone, and Berry can share this master class
+	// Runs in the editor whenever the actor is placed or a property changes,
+	// so the object name label updates live in the viewport (not just at runtime)
+	virtual void OnConstruction(const FTransform& Transform) override;
+
+	// Display name of this interactable object (Tree, Rock, Bush) - shown on the label above the mesh
+	UPROPERTY(EditAnywhere)
+	FString objectName = "Tree";
+
+	// Name of the resource this object yields when harvested (Wood, Stone, Berry) -
+	// drives which inventory slot the player character increments
 	UPROPERTY(EditAnywhere)
 	FString resourceName = "Wood";
 

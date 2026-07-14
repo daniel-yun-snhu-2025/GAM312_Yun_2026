@@ -20,9 +20,18 @@ void AResource_M::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Display whatever resourceName was set in the Details panel above the mesh
-	tempText = FText::FromString(resourceName);
+	// Display the object name (Tree, Rock, Bush) above the mesh
+	tempText = FText::FromString(objectName);
 	ResourceNameText->SetText(tempText);
+}
+
+// Called in the editor when the actor is placed or edited - keeps the label
+// showing the object name in the viewport without needing to play
+void AResource_M::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	ResourceNameText->SetText(FText::FromString(objectName));
 }
 
 // Called every frame
