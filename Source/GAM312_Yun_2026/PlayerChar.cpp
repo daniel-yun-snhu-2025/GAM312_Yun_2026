@@ -22,6 +22,9 @@ APlayerChar::APlayerChar()
 	ResourcesNameArray.Add(TEXT("Wood"));
 	ResourcesNameArray.Add(TEXT("Stone"));
 	ResourcesNameArray.Add(TEXT("Berry"));
+
+	// Establishing the building array - three elements matching Wall, Floor, and Ceiling
+	BuildingArray.SetNum(3);
 }
 
 // Called when the game starts or when spawned
@@ -37,6 +40,20 @@ void APlayerChar::BeginPlay()
 void APlayerChar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// While placing a building part, keep it floating 400 units ahead of the camera
+	// so it follows wherever the player points until they click to place it
+	if (isBuilding)
+	{
+		if (spawnedPart)
+		{
+			FVector StartLocation = PlayerCamComp->GetComponentLocation();
+			FVector Direction = PlayerCamComp->GetForwardVector() * 400.0f;
+			FVector EndLocation = StartLocation + Direction;
+
+			spawnedPart->SetActorLocation(EndLocation);
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -60,6 +77,9 @@ void APlayerChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	// Interact calls the FindObject function - this is how the input for the FindObject event is set up
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &APlayerChar::FindObject);
+
+	// RotPart rotates the building part currently being placed
+	PlayerInputComponent->BindAction("RotPart", IE_Pressed, this, &APlayerChar::RotateBuilding);
 }
 
 void APlayerChar::MoveForward(float axisValue)
@@ -94,6 +114,15 @@ void APlayerChar::StopJump()
 
 void APlayerChar::FindObject()
 {
+	// While placing a building part, clicking should place it instead of tracing -
+	// so the harvest trace only runs when we are not building
+	if (isBuilding)
+	{
+		// Clicking while building places the part and stops the follow logic in Tick
+		isBuilding = false;
+		return;
+	}
+
 	// Line trace setup - fires from the camera to whatever it is looking at
 	FHitResult HitResult;
 	FVector StartLocation = PlayerCamComp->GetComponentLocation();
@@ -211,5 +240,78 @@ void APlayerChar::DecreaseStats()
 	if (Hunger <= 0)
 	{
 		SetHealth(-1.0f);
+	}
+}
+
+void APlayerChar::UpdateResources(float woodAmount, float stoneAmount, FString buildingObject)
+{
+	// Only craft if the player can afford the wood cost
+	if (woodAmount <= ResourcesArray[0])
+	{
+		// And the stone cost
+		if (stoneAmount <= ResourcesArray[1])
+		{
+			// Spend the resources
+			ResourcesArray[0] = ResourcesArray[0] - woodAmount;
+			ResourcesArray[1] = ResourcesArray[1] - stoneAmount;
+
+			// The building object string decides which building slot goes up by one
+			if (buildingObject == "Wall")
+			{
+				BuildingArray[0] = BuildingArray[0] + 1;
+			}
+
+			if (buildingObject == "Floor")
+			{
+				BuildingArray[1] = BuildingArray[1] + 1;
+			}
+
+			if (buildingObject == "Ceiling")
+			{
+				BuildingArray[2] = BuildingArray[2] + 1;
+			}
+		}
+	}
+}
+
+void APlayerChar::SpawnBuilding(int buildingID, bool& isSuccess)
+{
+	// Can't start placing a new part while one is already being placed
+	if (!isBuilding)
+	{
+		// Check that we actually crafted at least one of this part type
+		if (BuildingArray[buildingID] >= 1)
+		{
+			isBuilding = true;
+			FActorSpawnParameters SpawnParams;
+
+			// Spawn the part 400 units ahead of the camera
+			FVector StartLocation = PlayerCamComp->GetComponentLocation();
+			FVector Direction = PlayerCamComp->GetForwardVector() * 400.0f;
+			FVector EndLocation = StartLocation + Direction;
+			FRotator myRot(0, 0, 0);
+
+			// Spend one part from the building array since we are placing it
+			BuildingArray[buildingID] = BuildingArray[buildingID] - 1;
+
+			// BuildPartClass is set by the widget to the Wall, Floor, or Ceiling child blueprint
+			spawnedPart = GetWorld()->SpawnActor<ABuildingPart>(BuildPartClass, EndLocation, myRot, SpawnParams);
+
+			isSuccess = true;
+		}
+		else
+		{
+			// No parts of this type available - report the failure back to the widget
+			isSuccess = false;
+		}
+	}
+}
+
+void APlayerChar::RotateBuilding()
+{
+	// Rotate the part being placed 90 degrees at a time
+	if (isBuilding)
+	{
+		spawnedPart->AddActorWorldRotation(FRotator(0, 90, 0));
 	}
 }
