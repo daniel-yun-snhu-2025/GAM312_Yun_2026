@@ -141,4 +141,17 @@ public:
 	// Rotates the part being placed by 90 degrees - bound to the RotPart input
 	UFUNCTION()
 	void RotateBuilding();
+
+	// The crafting menu widget class to open - set to the CraftingWidget blueprint on PlayerChar_BP
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crafting")
+	TSubclassOf<class UUserWidget> CraftWidgetClass;
+
+	// The live crafting menu instance while it is open
+	UPROPERTY()
+	class UUserWidget* CraftWidget;
+
+	// Opens/closes the crafting menu - bound to the CraftMenu input (F), works like
+	// the flip flop in the videos: first press opens, next press closes
+	UFUNCTION()
+	void ToggleCraftMenu();
 };

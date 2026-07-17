@@ -1,5 +1,8 @@
 #include "PlayerChar.h"
 #include "Camera/CameraComponent.h"
+// Crafting menu widget creation and input mode switching
+#include "Blueprint/UserWidget.h"
+#include "GameFramework/PlayerController.h"
 
 // Sets default values
 APlayerChar::APlayerChar()
@@ -80,6 +83,9 @@ void APlayerChar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	// RotPart rotates the building part currently being placed
 	PlayerInputComponent->BindAction("RotPart", IE_Pressed, this, &APlayerChar::RotateBuilding);
+
+	// CraftMenu opens and closes the crafting menu
+	PlayerInputComponent->BindAction("CraftMenu", IE_Pressed, this, &APlayerChar::ToggleCraftMenu);
 }
 
 void APlayerChar::MoveForward(float axisValue)
@@ -313,5 +319,44 @@ void APlayerChar::RotateBuilding()
 	if (isBuilding)
 	{
 		spawnedPart->AddActorWorldRotation(FRotator(0, 90, 0));
+	}
+}
+
+void APlayerChar::ToggleCraftMenu()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+
+	// First press (menu not on screen): open it, show the cursor, and give input to game and UI
+	if (!CraftWidget || !CraftWidget->IsInViewport())
+	{
+		if (!CraftWidget && CraftWidgetClass)
+		{
+			CraftWidget = CreateWidget<UUserWidget>(GetWorld(), CraftWidgetClass);
+		}
+
+		if (CraftWidget)
+		{
+			CraftWidget->AddToViewport();
+
+			if (PC)
+			{
+				PC->bShowMouseCursor = true;
+				FInputModeGameAndUI InputMode;
+				InputMode.SetWidgetToFocus(CraftWidget->TakeWidget());
+				PC->SetInputMode(InputMode);
+			}
+		}
+	}
+	// Next press: close it, hide the cursor, and hand input back to the game
+	else
+	{
+		CraftWidget->RemoveFromParent();
+
+		if (PC)
+		{
+			PC->bShowMouseCursor = false;
+			FInputModeGameOnly InputMode;
+			PC->SetInputMode(InputMode);
+		}
 	}
 }
