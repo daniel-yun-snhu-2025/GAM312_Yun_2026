@@ -6,6 +6,8 @@
 #include "Resource_M.h"
 // Included for SpawnDecalAtLocation when the line trace hits
 #include "Kismet/GameplayStatics.h"
+// Included so the player can spawn and manage building parts (wall, floor, ceiling)
+#include "BuildingPart.h"
 #include "PlayerChar.generated.h"
 
 class UCameraComponent;
@@ -109,4 +111,47 @@ public:
 	// Decal material spawned at the line trace hit location as a visual indicator
 	UPROPERTY(EditAnywhere, Category = "HitMarker")
 	UMaterialInterface* hitDecal;
+
+	// How many of each building part the player has crafted - index 0 is Wall, 1 is Floor, 2 is Ceiling
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building Supplies")
+	TArray<int> BuildingArray;
+
+	// True while the player is actively placing a building part
+	UPROPERTY()
+	bool isBuilding;
+
+	// Which building part class to spawn - lets the widget pick the Wall, Floor, or Ceiling child blueprint
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<ABuildingPart> BuildPartClass;
+
+	// The building part that is currently spawned and being placed
+	UPROPERTY()
+	ABuildingPart* spawnedPart;
+
+	// Spends wood and stone to craft a building part - the buildingObject string
+	// decides which slot of the building array goes up by one
+	UFUNCTION(BlueprintCallable)
+	void UpdateResources(float woodAmount, float stoneAmount, FString buildingObject);
+
+	// Spawns the selected building part 400 units ahead if one is available -
+	// isSuccess reports back to the widget whether the build happened
+	UFUNCTION(BlueprintCallable)
+	void SpawnBuilding(int buildingID, bool& isSuccess);
+
+	// Rotates the part being placed by 90 degrees - bound to the RotPart input
+	UFUNCTION()
+	void RotateBuilding();
+
+	// The crafting menu widget class to open - set to the CraftingWidget blueprint on PlayerChar_BP
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crafting")
+	TSubclassOf<class UUserWidget> CraftWidgetClass;
+
+	// The live crafting menu instance while it is open
+	UPROPERTY()
+	class UUserWidget* CraftWidget;
+
+	// Opens/closes the crafting menu - bound to the CraftMenu input (F), works like
+	// the flip flop in the videos: first press opens, next press closes
+	UFUNCTION()
+	void ToggleCraftMenu();
 };
