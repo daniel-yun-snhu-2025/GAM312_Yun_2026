@@ -34,7 +34,7 @@ void UCraftingWidgetBase::UpdateSupplies()
 	// Building supply readout - Wall, Floor, Ceiling counts from the building array
 	if (PlayerCharRef && currentSupplies)
 	{
-		FString Supplies = FString::Printf(TEXT("Wall: %d\n\nFloor: %d\n\nCeiling: %d"),
+		FString Supplies = FString::Printf(TEXT("Wall: %d\nFloor: %d\nCeiling: %d"),
 			PlayerCharRef->BuildingArray[0], PlayerCharRef->BuildingArray[1], PlayerCharRef->BuildingArray[2]);
 		currentSupplies->SetText(FText::FromString(Supplies));
 	}
