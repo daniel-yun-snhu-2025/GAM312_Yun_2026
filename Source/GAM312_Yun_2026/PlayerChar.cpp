@@ -44,7 +44,7 @@ void APlayerChar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// While placing a building part, keep it floating 400 units ahead of the camera
+	// While placing a building part, keep it 400 units ahead of the camera
 	// so it follows wherever the player points until they click to place it
 	if (isBuilding)
 	{
@@ -53,6 +53,18 @@ void APlayerChar::Tick(float DeltaTime)
 			FVector StartLocation = PlayerCamComp->GetComponentLocation();
 			FVector Direction = PlayerCamComp->GetForwardVector() * 400.0f;
 			FVector EndLocation = StartLocation + Direction;
+
+			// Snap the part to the ground so it sits level with the floor -
+			// trace straight down from the aim point and drop the pivot onto whatever we hit
+			FHitResult GroundHit;
+			FCollisionQueryParams GroundParams;
+			GroundParams.AddIgnoredActor(this);
+			GroundParams.AddIgnoredActor(spawnedPart);
+
+			if (GetWorld()->LineTraceSingleByChannel(GroundHit, EndLocation, EndLocation - FVector(0.0f, 0.0f, 2000.0f), ECC_Visibility, GroundParams))
+			{
+				EndLocation.Z = GroundHit.Location.Z;
+			}
 
 			spawnedPart->SetActorLocation(EndLocation);
 		}
@@ -296,6 +308,17 @@ void APlayerChar::SpawnBuilding(int buildingID, bool& isSuccess)
 			FVector Direction = PlayerCamComp->GetForwardVector() * 400.0f;
 			FVector EndLocation = StartLocation + Direction;
 			FRotator myRot(0, 0, 0);
+
+			// Start the part on the ground right away - trace down from the aim
+			// point so the pivot lands level with the floor
+			FHitResult GroundHit;
+			FCollisionQueryParams GroundParams;
+			GroundParams.AddIgnoredActor(this);
+
+			if (GetWorld()->LineTraceSingleByChannel(GroundHit, EndLocation, EndLocation - FVector(0.0f, 0.0f, 2000.0f), ECC_Visibility, GroundParams))
+			{
+				EndLocation.Z = GroundHit.Location.Z;
+			}
 
 			// Spend one part from the building array since we are placing it
 			BuildingArray[buildingID] = BuildingArray[buildingID] - 1;
