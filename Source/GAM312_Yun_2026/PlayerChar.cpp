@@ -44,8 +44,8 @@ void APlayerChar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// While placing a building part, keep it 400 units ahead of the camera
-	// so it follows wherever the player points until they click to place it
+	// While placing a building part, keep it ahead of the camera so it follows
+	// wherever the player points until they click to place it
 	if (isBuilding)
 	{
 		if (spawnedPart)
@@ -54,14 +54,35 @@ void APlayerChar::Tick(float DeltaTime)
 			FVector Direction = PlayerCamComp->GetForwardVector() * 400.0f;
 			FVector EndLocation = StartLocation + Direction;
 
-			// Snap the part to the ground so it sits level with the floor -
-			// trace straight down from the aim point and drop the pivot onto whatever we hit
-			FHitResult GroundHit;
-			FCollisionQueryParams GroundParams;
-			GroundParams.AddIgnoredActor(this);
-			GroundParams.AddIgnoredActor(spawnedPart);
+			FCollisionQueryParams TraceParams;
+			TraceParams.AddIgnoredActor(this);
+			TraceParams.AddIgnoredActor(spawnedPart);
 
-			if (GetWorld()->LineTraceSingleByChannel(GroundHit, EndLocation, EndLocation - FVector(0.0f, 0.0f, 2000.0f), ECC_Visibility, GroundParams))
+			// First trace along the camera's aim, out to the same 800 unit reach as
+			// the harvest trace, to find what the player is looking at
+			FHitResult AimHit;
+			if (GetWorld()->LineTraceSingleByChannel(AimHit, StartLocation, StartLocation + PlayerCamComp->GetForwardVector() * 800.0f, ECC_Visibility, TraceParams))
+			{
+				EndLocation = AimHit.Location;
+
+				// Looking at another building part - stack this part on top of it,
+				// so aiming anywhere on a placed wall drops the new part onto its top
+				if (ABuildingPart* HitPart = Cast<ABuildingPart>(AimHit.GetActor()))
+				{
+					FVector PartOrigin;
+					FVector PartExtent;
+					HitPart->GetActorBounds(true, PartOrigin, PartExtent);
+					EndLocation.Z = PartOrigin.Z + PartExtent.Z;
+
+					spawnedPart->SetActorLocation(EndLocation);
+					return;
+				}
+			}
+
+			// Otherwise drop straight down from just above the aim point so the
+			// pivot rests level on the supporting surface
+			FHitResult GroundHit;
+			if (GetWorld()->LineTraceSingleByChannel(GroundHit, EndLocation + FVector(0.0f, 0.0f, 50.0f), EndLocation - FVector(0.0f, 0.0f, 2000.0f), ECC_Visibility, TraceParams))
 			{
 				EndLocation.Z = GroundHit.Location.Z;
 			}
