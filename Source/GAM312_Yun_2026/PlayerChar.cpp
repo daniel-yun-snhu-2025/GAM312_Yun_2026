@@ -65,14 +65,25 @@ void APlayerChar::Tick(float DeltaTime)
 			{
 				EndLocation = AimHit.Location;
 
-				// Looking at another building part - stack this part on top of it,
-				// so aiming anywhere on a placed wall drops the new part onto its top
+				// Looking at another building part - where the new part snaps depends
+				// on what is being placed: floors slide in underneath the part, while
+				// walls and ceilings stack on top of it
 				if (ABuildingPart* HitPart = Cast<ABuildingPart>(AimHit.GetActor()))
 				{
 					FVector PartOrigin;
 					FVector PartExtent;
 					HitPart->GetActorBounds(true, PartOrigin, PartExtent);
-					EndLocation.Z = PartOrigin.Z + PartExtent.Z;
+
+					if (spawnedPartID == 1)
+					{
+						// Floor - drop to the hit part's bottom so the plate tucks under it
+						EndLocation.Z = PartOrigin.Z - PartExtent.Z;
+					}
+					else
+					{
+						// Wall or ceiling - snap onto the hit part's top
+						EndLocation.Z = PartOrigin.Z + PartExtent.Z;
+					}
 
 					spawnedPart->SetActorLocation(EndLocation);
 					return;
@@ -343,6 +354,9 @@ void APlayerChar::SpawnBuilding(int buildingID, bool& isSuccess)
 
 			// Spend one part from the building array since we are placing it
 			BuildingArray[buildingID] = BuildingArray[buildingID] - 1;
+
+			// Remember which part type this is so Tick knows how to snap it while placing
+			spawnedPartID = buildingID;
 
 			// BuildPartClass is set by the widget to the Wall, Floor, or Ceiling child blueprint
 			spawnedPart = GetWorld()->SpawnActor<ABuildingPart>(BuildPartClass, EndLocation, myRot, SpawnParams);

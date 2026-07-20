@@ -128,6 +128,11 @@ public:
 	UPROPERTY()
 	ABuildingPart* spawnedPart;
 
+	// Which part type spawnedPart is - same indices as BuildingArray (0 Wall, 1 Floor,
+	// 2 Ceiling) - so placement in Tick can treat floors and ceilings differently
+	UPROPERTY()
+	int spawnedPartID;
+
 	// Spends wood and stone to craft a building part - the buildingObject string
 	// decides which slot of the building array goes up by one
 	UFUNCTION(BlueprintCallable)
