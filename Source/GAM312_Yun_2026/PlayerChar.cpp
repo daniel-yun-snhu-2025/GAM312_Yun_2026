@@ -58,6 +58,12 @@ void APlayerChar::Tick(float DeltaTime)
 			TraceParams.AddIgnoredActor(this);
 			TraceParams.AddIgnoredActor(spawnedPart);
 
+			// The mesh can sit away from the actor pivot (the plates hang off their
+			// pivot edge), so all of the snapping below works out where the MESH
+			// belongs and then shifts the pivot by the current mesh offset
+			FVector MeshOffset = spawnedPart->Mesh->Bounds.Origin - spawnedPart->GetActorLocation();
+			FVector SpawnedExtent = spawnedPart->Mesh->Bounds.BoxExtent;
+
 			// First trace along the camera's aim, out to the same 800 unit reach as
 			// the harvest trace, to find what the player is looking at
 			FHitResult AimHit;
@@ -82,8 +88,6 @@ void APlayerChar::Tick(float DeltaTime)
 					{
 						PartBottom = PartBottom - previewLiftHeight;
 					}
-
-					FVector SpawnedExtent = spawnedPart->Mesh->Bounds.BoxExtent;
 
 					// Plates (floor and ceiling) line up flush against a wall - the wall
 					// stands along the plate's edge with matching corners, and the plate
@@ -119,15 +123,48 @@ void APlayerChar::Tick(float DeltaTime)
 					if (spawnedPartID == 1)
 					{
 						// Floor - the plate slides in at the part's resting base
-						EndLocation.Z = PartBottom;
+						EndLocation.Z = PartBottom + SpawnedExtent.Z;
 					}
 					else
 					{
-						// Wall or ceiling - the new part itself settles onto the part's top
-						EndLocation.Z = PartOrigin.Z + PartExtent.Z;
+						// Wall or ceiling - the new part itself settles with its own
+						// underside on the support's top
+						float SupportTop = PartOrigin.Z + PartExtent.Z;
+
+						// A ceiling seats on the tallest part standing inside its
+						// footprint - so aiming at the floor of a room still lands
+						// the roof up on the walls, not down on the floor plate
+						if (spawnedPartID == 2)
+						{
+							TArray<AActor*> Parts;
+							UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABuildingPart::StaticClass(), Parts);
+
+							for (AActor* Part : Parts)
+							{
+								ABuildingPart* OtherPart = Cast<ABuildingPart>(Part);
+								if (!OtherPart || Part == spawnedPart)
+								{
+									continue;
+								}
+
+								FVector OtherOrigin = OtherPart->Mesh->Bounds.Origin;
+								FVector OtherExtent = OtherPart->Mesh->Bounds.BoxExtent;
+
+								bool bInFootprint = FMath::Abs(OtherOrigin.X - EndLocation.X) <= (OtherExtent.X + SpawnedExtent.X)
+									&& FMath::Abs(OtherOrigin.Y - EndLocation.Y) <= (OtherExtent.Y + SpawnedExtent.Y);
+
+								if (bInFootprint && (OtherOrigin.Z + OtherExtent.Z) > SupportTop)
+								{
+									SupportTop = OtherOrigin.Z + OtherExtent.Z;
+								}
+							}
+						}
+
+						EndLocation.Z = SupportTop + SpawnedExtent.Z;
 					}
 
-					spawnedPart->SetActorLocation(EndLocation);
+					// EndLocation is where the mesh center belongs - shift the pivot
+					spawnedPart->SetActorLocation(EndLocation - MeshOffset);
 
 					// A floor preview lifts what stands on its plate the moment it
 					// slides underneath - no click needed
@@ -141,14 +178,16 @@ void APlayerChar::Tick(float DeltaTime)
 			}
 
 			// Otherwise drop straight down from just above the aim point so the
-			// pivot rests level on the supporting surface
+			// mesh rests level on the supporting surface
 			FHitResult GroundHit;
 			if (GetWorld()->LineTraceSingleByChannel(GroundHit, EndLocation + FVector(0.0f, 0.0f, 50.0f), EndLocation - FVector(0.0f, 0.0f, 2000.0f), ECC_Visibility, TraceParams))
 			{
-				EndLocation.Z = GroundHit.Location.Z;
+				// Seat the mesh's underside on the ground
+				EndLocation.Z = GroundHit.Location.Z + SpawnedExtent.Z;
 			}
 
-			spawnedPart->SetActorLocation(EndLocation);
+			// EndLocation is where the mesh center belongs - shift the pivot
+			spawnedPart->SetActorLocation(EndLocation - MeshOffset);
 
 			// Keep the floor preview's lift in sync here too, so parts settle
 			// back down as soon as the plate slides away from them
