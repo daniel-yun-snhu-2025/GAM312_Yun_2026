@@ -128,6 +128,23 @@ public:
 	UPROPERTY()
 	ABuildingPart* spawnedPart;
 
+	// Which part type spawnedPart is - same indices as BuildingArray (0 Wall, 1 Floor,
+	// 2 Ceiling) - so placement in Tick can treat floors and ceilings differently
+	UPROPERTY()
+	int spawnedPartID;
+
+	// Parts lifted by the floor preview while the plate slides underneath them -
+	// raised one plate height right away and set back down if the preview leaves
+	UPROPERTY()
+	TArray<AActor*> previewLifted;
+
+	// How far the current preview lift raised those parts
+	float previewLiftHeight = 0.0f;
+
+	// Keeps the lifted set in sync with whatever stands on the preview plate
+	UFUNCTION()
+	void UpdatePreviewLift();
+
 	// Spends wood and stone to craft a building part - the buildingObject string
 	// decides which slot of the building array goes up by one
 	UFUNCTION(BlueprintCallable)
