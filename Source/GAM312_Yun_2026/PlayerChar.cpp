@@ -74,6 +74,12 @@ void APlayerChar::Tick(float DeltaTime)
 					FVector PartExtent;
 					HitPart->GetActorBounds(true, PartOrigin, PartExtent);
 
+					// Lock onto the part's center in X and Y - the preview stays put
+					// no matter where on the part the player is aiming, instead of
+					// sliding around with the exact hit point
+					EndLocation.X = PartOrigin.X;
+					EndLocation.Y = PartOrigin.Y;
+
 					if (spawnedPartID == 1)
 					{
 						// Floor - drop to the hit part's bottom so the plate tucks under it
@@ -170,6 +176,12 @@ void APlayerChar::FindObject()
 	{
 		// Clicking while building places the part and stops the follow logic in Tick
 		isBuilding = false;
+
+		// The placed part becomes solid again now that placement is confirmed
+		if (spawnedPart)
+		{
+			spawnedPart->SetActorEnableCollision(true);
+		}
 
 		// A floor is placed underneath whatever it was aimed at - so every part
 		// standing on the plate's footprint gets lifted up onto the new floor
@@ -396,6 +408,13 @@ void APlayerChar::SpawnBuilding(int buildingID, bool& isSuccess)
 
 			// BuildPartClass is set by the widget to the Wall, Floor, or Ceiling child blueprint
 			spawnedPart = GetWorld()->SpawnActor<ABuildingPart>(BuildPartClass, EndLocation, myRot, SpawnParams);
+
+			// The part is only a preview while it follows the view - collision stays
+			// off until it is placed so it cannot shove the player around
+			if (spawnedPart)
+			{
+				spawnedPart->SetActorEnableCollision(false);
+			}
 
 			isSuccess = true;
 		}
