@@ -170,6 +170,42 @@ void APlayerChar::FindObject()
 	{
 		// Clicking while building places the part and stops the follow logic in Tick
 		isBuilding = false;
+
+		// A floor is placed underneath whatever it was aimed at - so every part
+		// standing on the plate's footprint gets lifted up onto the new floor
+		if (spawnedPartID == 1 && spawnedPart)
+		{
+			FVector FloorOrigin;
+			FVector FloorExtent;
+			spawnedPart->GetActorBounds(true, FloorOrigin, FloorExtent);
+
+			TArray<AActor*> Parts;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABuildingPart::StaticClass(), Parts);
+
+			for (AActor* Part : Parts)
+			{
+				if (Part == spawnedPart)
+				{
+					continue;
+				}
+
+				FVector PartOrigin;
+				FVector PartExtent;
+				Part->GetActorBounds(true, PartOrigin, PartExtent);
+
+				// Inside the plate's footprint and standing at or above its base level
+				bool bOverlapsXY = FMath::Abs(PartOrigin.X - FloorOrigin.X) <= (PartExtent.X + FloorExtent.X)
+					&& FMath::Abs(PartOrigin.Y - FloorOrigin.Y) <= (PartExtent.Y + FloorExtent.Y);
+				bool bOnOrAboveBase = (PartOrigin.Z - PartExtent.Z) >= (FloorOrigin.Z - FloorExtent.Z) - 1.0f;
+
+				if (bOverlapsXY && bOnOrAboveBase)
+				{
+					// Raise by the full plate height so stacked parts keep their spacing
+					Part->AddActorWorldOffset(FVector(0.0f, 0.0f, FloorExtent.Z * 2.0f));
+				}
+			}
+		}
+
 		return;
 	}
 
