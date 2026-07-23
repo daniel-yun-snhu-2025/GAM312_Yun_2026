@@ -37,12 +37,32 @@ void APlayerChar::BeginPlay()
 
 	// Starting the stats timer - calls DecreaseStats every 2 seconds, looping
 	GetWorld()->GetTimerManager().SetTimer(StatsTimerHandle, this, &APlayerChar::DecreaseStats, 2.0f, true);
+
+	// Create the player HUD from the Player_W class, keep the instance in
+	// playerUI, and add it to the viewport - the reference must point at a
+	// live instance before Tick starts pushing stats into it
+	if (PlayerHUDClass)
+	{
+		playerUI = CreateWidget<UPlayerWidget>(GetWorld(), PlayerHUDClass);
+
+		if (playerUI)
+		{
+			playerUI->AddToViewport();
+		}
+	}
 }
 
 // Called every frame
 void APlayerChar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Push the current stats into the HUD bars every frame, like the video's
+	// Update Bars call off the Tick event
+	if (playerUI)
+	{
+		playerUI->UpdateBars(Health, Hunger, Stamina);
+	}
 
 	// While placing a building part, keep it ahead of the camera so it follows
 	// wherever the player points until they click to place it

@@ -8,6 +8,8 @@
 #include "Kismet/GameplayStatics.h"
 // Included so the player can spawn and manage building parts (wall, floor, ceiling)
 #include "BuildingPart.h"
+// Included so the player can create and update the on-screen stat bar widget
+#include "PlayerWidget.h"
 #include "PlayerChar.generated.h"
 
 class UCameraComponent;
@@ -132,6 +134,15 @@ public:
 	// 2 Ceiling) - so placement in Tick can treat floors and ceilings differently
 	UPROPERTY()
 	int spawnedPartID;
+
+	// The live player HUD widget - set to a real instance on BeginPlay so the
+	// Tick update always has a widget to write into
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPlayerWidget* playerUI;
+
+	// The Player_W widget blueprint the HUD instance is created from
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+	TSubclassOf<UPlayerWidget> PlayerHUDClass;
 
 	// Parts lifted by the floor preview while the plate slides underneath them -
 	// raised one plate height right away and set back down if the preview leaves
