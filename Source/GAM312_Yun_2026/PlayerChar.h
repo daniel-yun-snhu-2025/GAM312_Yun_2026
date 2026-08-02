@@ -10,6 +10,8 @@
 #include "BuildingPart.h"
 // Included so the player can create and update the on-screen stat bar widget
 #include "PlayerWidget.h"
+// Included so the player can create and update the objective tracker widget
+#include "ObjectiveWidget.h"
 #include "PlayerChar.generated.h"
 
 class UCameraComponent;
@@ -143,6 +145,23 @@ public:
 	// The Player_W widget blueprint the HUD instance is created from
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
 	TSubclassOf<UPlayerWidget> PlayerHUDClass;
+
+	// The live objective tracker widget - set to a real instance on BeginPlay,
+	// then fed the collected and built totals as they change
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UObjectiveWidget* objWidget;
+
+	// The Objective_W widget blueprint the tracker instance is created from
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+	TSubclassOf<UObjectiveWidget> ObjectiveHUDClass;
+
+	// Running total of materials collected toward the 500 mats objective
+	UPROPERTY()
+	float matsCollected;
+
+	// Running total of building parts placed toward the 5 parts objective
+	UPROPERTY()
+	float objectsBuilt;
 
 	// Parts lifted by the floor preview while the plate slides underneath them -
 	// raised one plate height right away and set back down if the preview leaves

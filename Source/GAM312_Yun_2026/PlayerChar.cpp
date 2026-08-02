@@ -50,6 +50,21 @@ void APlayerChar::BeginPlay()
 			playerUI->AddToViewport();
 		}
 	}
+
+	// Create the objective tracker the same way and seed both objective
+	// lines at zero until things are added to them
+	if (ObjectiveHUDClass)
+	{
+		objWidget = CreateWidget<UObjectiveWidget>(GetWorld(), ObjectiveHUDClass);
+
+		if (objWidget)
+		{
+			objWidget->AddToViewport();
+
+			objWidget->UpdatebuildObj(0.0f);
+			objWidget->UpdatematOBJ(0.0f);
+		}
+	}
 }
 
 // Called every frame
@@ -361,6 +376,14 @@ void APlayerChar::FindObject()
 		// Parts the floor preview lifted stay resting on the placed plate
 		previewLifted.Empty();
 
+		// One more part placed toward the build objective
+		objectsBuilt = objectsBuilt + 1.0f;
+
+		if (objWidget)
+		{
+			objWidget->UpdatebuildObj(objectsBuilt);
+		}
+
 		return;
 	}
 
@@ -399,6 +422,14 @@ void APlayerChar::FindObject()
 				{
 					// There is still resource left - give the player the value collected
 					GiveResource(resourceValue, hitName);
+
+					// Count the collected amount toward the material objective
+					matsCollected = matsCollected + resourceValue;
+
+					if (objWidget)
+					{
+						objWidget->UpdatematOBJ(matsCollected);
+					}
 
 					check(GEngine != nullptr);
 					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("Resource Collected"));
