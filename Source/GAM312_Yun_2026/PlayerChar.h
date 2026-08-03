@@ -175,6 +175,10 @@ public:
 	UFUNCTION()
 	void UpdatePreviewLift();
 
+	// Highest mesh top among placed parts overlapping a plate footprint at the
+	// given spot - how a ceiling finds the walls it should climb onto
+	float TallestSupportTop(FVector AtLocation, FVector PlateExtent, float MinTop);
+
 	// Spends wood and stone to craft a building part - the buildingObject string
 	// decides which slot of the building array goes up by one
 	UFUNCTION(BlueprintCallable)
