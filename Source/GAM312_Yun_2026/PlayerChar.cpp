@@ -524,10 +524,11 @@ void APlayerChar::DecreaseStats()
 	// Stamina regeneration - adds back 10 every interval
 	SetStamina(10.0f);
 
-	// Once Hunger is empty, Health starts draining instead
+	// Once Hunger is empty, Health drains fast - an ignored hunger bar
+	// loses the run in well under a minute
 	if (Hunger <= 0)
 	{
-		SetHealth(-1.0f);
+		SetHealth(-5.0f);
 	}
 }
 
