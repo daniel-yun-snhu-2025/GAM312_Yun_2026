@@ -27,4 +27,13 @@ public:
 	// between zero and one, so each stat out of 100 gets divided down
 	UFUNCTION(BlueprintCallable)
 	void UpdateBars(float health, float hunger, float stamina);
+
+	// The win and lose screen blueprint to open - set to WinLose_W on Player_W.
+	// UpdateBars runs constantly, so it doubles as the health-zero watcher
+	// from the video: health at or below zero pops the lose screen
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Win Lose")
+	TSubclassOf<class UUserWidget> WinLoseClass;
+
+	// Guards against opening the lose screen more than once
+	bool bLoseShown = false;
 };
