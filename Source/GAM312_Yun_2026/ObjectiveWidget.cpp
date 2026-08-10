@@ -1,8 +1,6 @@
 #include "ObjectiveWidget.h"
-// QuitGame helper
-#include "Kismet/KismetSystemLibrary.h"
-// GetPlayerController for the quit call
-#include "Kismet/GameplayStatics.h"
+// The win and lose screen this widget opens on completion
+#include "WinLoseWidget.h"
 
 void UObjectiveWidget::UpdatematOBJ(float matsCollected)
 {
@@ -49,14 +47,24 @@ void UObjectiveWidget::UpdatebuildObj(float objectsBuilt)
 
 void UObjectiveWidget::CheckObjectives()
 {
-	// Both objectives complete - wait two seconds, then quit the game
-	if (MatComplete && BuildComplete && !QuitTimerHandle.IsValid())
+	// Both objectives complete - open the win screen once
+	if (MatComplete && BuildComplete && !bWinShown)
 	{
-		GetWorld()->GetTimerManager().SetTimer(QuitTimerHandle, this, &UObjectiveWidget::QuitGame, 2.0f, false);
+		bWinShown = true;
+		ShowWinScreen();
 	}
 }
 
-void UObjectiveWidget::QuitGame()
+void UObjectiveWidget::ShowWinScreen()
 {
-	UKismetSystemLibrary::QuitGame(GetWorld(), UGameplayStatics::GetPlayerController(GetWorld(), 0), EQuitPreference::Quit, false);
+	// Create the win lose widget, tell it we won, and put it on screen -
+	// same Create Widget, Set Win Lose Text, Add to Viewport chain as the video
+	if (WinLoseClass)
+	{
+		if (UWinLoseWidget* WinScreen = CreateWidget<UWinLoseWidget>(GetWorld(), WinLoseClass))
+		{
+			WinScreen->SetWinLoseText(TEXT("Winner"));
+			WinScreen->AddToViewport();
+		}
+	}
 }

@@ -36,14 +36,18 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdatebuildObj(float objectsBuilt);
 
+	// The win and lose screen blueprint to open - set to WinLose_W on Objective_W
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Win Lose")
+	TSubclassOf<class UUserWidget> WinLoseClass;
+
 private:
-	// Once both objectives are complete, wait two seconds and quit the game,
-	// matching the AND -> Delay 2.0 -> Quit Game chain from the video
+	// Once both objectives are complete, pop the win screen - this replaces
+	// the straight Quit Game the objectives used before this module
 	void CheckObjectives();
 
-	// Fired by the quit timer
-	void QuitGame();
+	// Creates the win lose widget, sets its headline to Winner, and shows it
+	void ShowWinScreen();
 
-	// Timer handle driving the two second delay before quitting
-	FTimerHandle QuitTimerHandle;
+	// Guards against opening the win screen more than once
+	bool bWinShown = false;
 };
