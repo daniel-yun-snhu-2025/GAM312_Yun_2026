@@ -10,14 +10,22 @@ APlayerChar::APlayerChar()
 	// Set this character to call Tick() every frame
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Initial setup of the camera component
+	// Camera libraries in a game engine hide the projection math behind a
+	// component: UCameraComponent carries the field of view and world transform,
+	// and every frame the engine builds the view and projection matrices from it
+	// to turn 3D world positions into what appears on screen. Creating it as a
+	// default subobject makes the camera part of this character's composition.
 	PlayerCamComp = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 
-	// Attaching the camera to the character mesh and the head bone
+	// Attaching the camera to the head bone puts the lens where the character's
+	// eyes are - the definition of a first-person perspective. The component
+	// inherits the socket's transform, so the view rides the character for free
 	PlayerCamComp->SetupAttachment(GetMesh(), "head");
 
-	// Using the controller's rotation for the camera - the pawn shares the controller's
-	// rotation, so turning the camera turns the character along with it (true first person)
+	// Using the controller's rotation for the camera - mouse input accumulates in
+	// the controller, the pawn shares that rotation, and the camera library reads
+	// it back each frame, so looking around is just rotating one transform that
+	// the view matrix is rebuilt from (true first person)
 	PlayerCamComp->bUsePawnControlRotation = true;
 
 	// Establishing the resource arrays - three elements matching Wood, Stone, and Berry
@@ -80,7 +88,12 @@ void APlayerChar::Tick(float DeltaTime)
 	}
 
 	// While placing a building part, keep it ahead of the camera so it follows
-	// wherever the player points until they click to place it
+	// wherever the player points until they click to place it.
+	// This whole block is applied linear algebra: every position and direction
+	// is a 3D vector, "ahead of the camera" is the camera position plus its
+	// forward unit vector scaled by a distance (vector addition and scalar
+	// multiplication), the snap logic below compares vector components against
+	// box extents, and every lift or drop is a vector sum along the world Z axis
 	if (isBuilding)
 	{
 		if (spawnedPart)
@@ -403,7 +416,12 @@ void APlayerChar::FindObject()
 		return;
 	}
 
-	// Line trace setup - fires from the camera to whatever it is looking at
+	// Line trace setup - fires from the camera to whatever it is looking at.
+	// A trace sweeps a ray through the physics scene and returns the first
+	// primitive whose collision settings respond on the queried channel - here
+	// ECC_Visibility. Each mesh's collision profile decides whether it blocks,
+	// overlaps, or ignores that channel, which is how one ray can hit a resource
+	// node, a placed wall, or the landscape, and pass through everything else
 	FHitResult HitResult;
 	FVector StartLocation = PlayerCamComp->GetComponentLocation();
 	// 800 units ahead of the camera in the direction it is looking
